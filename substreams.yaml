@@ -32,6 +32,6 @@ sink:
   type: sf.substreams.sink.sql.v1.Service
   config:
     schema: "./schema.sql"
-    engine: clickhouse
+    engine: postgres
     postgraphile_frontend:
       enabled: false
