@@ -196,753 +196,699 @@ CREATE INDEX idx_raydium_amm_withdraw_pnl_events_coin_mint ON raydium_amm_withdr
 
 CREATE TABLE spl_token_initialize_mint_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    mint LowCardinality(String) CODEC(LZ4),
-    decimals UInt64,
-    mint_authority LowCardinality(String) CODEC(LZ4),
-    freeze_authority LowCardinality(String) CODEC(LZ4),
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    mint TEXT,
+    decimals BIGINT,
+    mint_authority TEXT,
+    freeze_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create index to replace ClickHouse PROJECTION
+CREATE INDEX idx_spl_token_initialize_mint_events_mint 
+ON spl_token_initialize_mint_events (mint, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_initialize_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    account_address LowCardinality(String) CODEC(LZ4),
-    account_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_owner (SELECT * ORDER BY account_owner),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 4e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    account_address TEXT,
+    account_owner TEXT,
+    mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_initialize_account_events_owner ON spl_token_initialize_account_events (account_owner, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_initialize_account_events_mint ON spl_token_initialize_account_events (mint, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_initialize_multisig_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    multisig String CODEC(LZ4),
-    -- signers Array(LowCardinality(String)) CODEC(LZ4),
-    m UInt64,
-    -- PROJECTION projection_multisig (SELECT * ORDER BY multisig),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    multisig TEXT,
+    -- signers TEXT[], -- Array alternative if needed
+    m BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create index to replace ClickHouse PROJECTION
+CREATE INDEX idx_spl_token_initialize_multisig_events_multisig ON spl_token_initialize_multisig_events (multisig, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_transfer_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    source_pre_balance UInt64,
-    destination_address LowCardinality(String) CODEC(LZ4),
-    destination_owner LowCardinality(String) CODEC(LZ4),
-    destination_pre_balance UInt64,
-    mint LowCardinality(String) CODEC(LZ4),
-    amount UInt64,
-    authority LowCardinality(String) CODEC(LZ4),
-    transfer_type LowCardinality(String) DEFAULT 'unknown' CODEC(LZ4),
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_source (SELECT * ORDER BY source_owner, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_destination (SELECT * ORDER BY destination_owner, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 1e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    source_pre_balance BIGINT,
+    destination_address TEXT,
+    destination_owner TEXT,
+    destination_pre_balance BIGINT,
+    mint TEXT,
+    amount BIGINT,
+    authority TEXT,
+    transfer_type TEXT DEFAULT 'unknown',
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_transfer_events_mint ON spl_token_transfer_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_transfer_events_source ON spl_token_transfer_events (source_owner, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_transfer_events_destination ON spl_token_transfer_events (destination_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_approve_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    delegate LowCardinality(String) CODEC(LZ4),
-    amount UInt64,
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_owner (SELECT * ORDER BY source_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    mint TEXT,
+    delegate TEXT,
+    amount BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_approve_events_mint ON spl_token_approve_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_approve_events_owner ON spl_token_approve_events (source_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_revoke_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_owner (SELECT * ORDER BY source_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_revoke_events_mint ON spl_token_revoke_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_revoke_events_owner ON spl_token_revoke_events (source_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_set_authority_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    mint LowCardinality(String) CODEC(LZ4),
-    authority_type LowCardinality(VARCHAR(14)) CODEC(LZ4),
-    new_authority LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    mint TEXT,
+    authority_type VARCHAR(14),
+    new_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_set_authority_events_mint ON spl_token_set_authority_events (mint, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_mint_to_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    destination_address LowCardinality(String) CODEC(LZ4),
-    destination_owner LowCardinality(String) CODEC(LZ4),
-    destination_pre_balance UInt64,
-    mint LowCardinality(String) CODEC(LZ4),
-    mint_authority LowCardinality(String) CODEC(LZ4),
-    amount UInt64,
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_destination (SELECT * ORDER BY destination_owner, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 32e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    destination_address TEXT,
+    destination_owner TEXT,
+    destination_pre_balance BIGINT,
+    mint TEXT,
+    mint_authority TEXT,
+    amount BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_mint_to_events_mint ON spl_token_mint_to_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_mint_to_events_destination ON spl_token_mint_to_events (destination_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_burn_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    source_pre_balance UInt64,
-    mint LowCardinality(String) CODEC(LZ4),
-    authority LowCardinality(String) CODEC(LZ4),
-    amount UInt64,
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_source (SELECT * ORDER BY source_owner, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 16e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    source_pre_balance BIGINT,
+    mint TEXT,
+    authority TEXT,
+    amount BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_burn_events_mint ON spl_token_burn_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_burn_events_source ON spl_token_burn_events (source_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_close_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    destination LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_source (SELECT * ORDER BY source_owner),
-    -- PROJECTION projection_destination (SELECT * ORDER BY destination),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 4e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    destination TEXT,
+    mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_close_account_events_mint ON spl_token_close_account_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_close_account_events_source ON spl_token_close_account_events (source_owner, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_close_account_events_destination ON spl_token_close_account_events (destination, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_freeze_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    freeze_authority LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_source (SELECT * ORDER BY source_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    mint TEXT,
+    freeze_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_freeze_account_events_mint ON spl_token_freeze_account_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_freeze_account_events_source ON spl_token_freeze_account_events (source_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_thaw_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    source_address LowCardinality(String) CODEC(LZ4),
-    source_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    freeze_authority LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_source (SELECT * ORDER BY source_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    source_address TEXT,
+    source_owner TEXT,
+    mint TEXT,
+    freeze_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_thaw_account_events_mint ON spl_token_thaw_account_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_thaw_account_events_source ON spl_token_thaw_account_events (source_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_initialize_immutable_owner_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    account_address LowCardinality(String) CODEC(LZ4),
-    account_owner LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_mint (SELECT * ORDER BY mint),
-    -- PROJECTION projection_owner (SELECT * ORDER BY account_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 8e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    account_address TEXT,
+    account_owner TEXT,
+    mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_init_immutable_owner_events_mint ON spl_token_initialize_immutable_owner_events (mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_spl_token_init_immutable_owner_events_owner ON spl_token_initialize_immutable_owner_events (account_owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE spl_token_sync_native_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    account_address LowCardinality(String) CODEC(LZ4),
-    account_owner LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_owner (SELECT * ORDER BY account_owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    account_address TEXT,
+    account_owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_spl_token_sync_native_events_owner ON spl_token_sync_native_events (account_owner, slot, transaction_index, instruction_index);
 
 -- SYSTEM PROGRAM EVENTS
 
 CREATE TABLE system_program_create_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    funding_account LowCardinality(String) CODEC(LZ4),
-    new_account LowCardinality(String) CODEC(LZ4),
-    lamports UInt64,
-    space UInt64,
-    owner LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_funding_account (SELECT * ORDER BY funding_account),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 4e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    funding_account TEXT,
+    new_account TEXT,
+    lamports BIGINT,
+    space BIGINT,
+    owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_system_program_create_account_events_funding ON system_program_create_account_events (funding_account, slot, transaction_index, instruction_index);
 
 CREATE TABLE system_program_assign_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    assigned_account LowCardinality(String) CODEC(LZ4),
-    owner LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projectION_owner (SELECT * ORDER BY owner),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    assigned_account TEXT,
+    owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_system_program_assign_events_owner ON system_program_assign_events (owner, slot, transaction_index, instruction_index);
 
 CREATE TABLE system_program_transfer_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    funding_account LowCardinality(String) CODEC(LZ4),
-    funding_account_pre_balance UInt64,
-    funding_account_post_balance UInt64,
-    recipient_account LowCardinality(String) CODEC(LZ4),
-    recipient_account_pre_balance UInt64,
-    recipient_account_post_balance UInt64,
-    lamports UInt64,
-    transfer_type LowCardinality(String) DEFAULT 'unknown' CODEC(LZ4),
-    PROJECTION projection_funding_account (SELECT * ORDER BY funding_account, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_recipient_account (SELECT * ORDER BY recipient_account, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 1e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    funding_account TEXT,
+    funding_account_pre_balance BIGINT,
+    funding_account_post_balance BIGINT,
+    recipient_account TEXT,
+    recipient_account_pre_balance BIGINT,
+    recipient_account_post_balance BIGINT,
+    lamports BIGINT,
+    transfer_type TEXT DEFAULT 'unknown',
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_system_program_transfer_events_funding ON system_program_transfer_events (funding_account, slot, transaction_index, instruction_index);
+CREATE INDEX idx_system_program_transfer_events_recipient ON system_program_transfer_events (recipient_account, slot, transaction_index, instruction_index);
 
 CREATE TABLE system_program_create_account_with_seed_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    funding_account LowCardinality(String) CODEC(LZ4),
-    created_account LowCardinality(String) CODEC(LZ4),
-    base_account LowCardinality(String) CODEC(LZ4),
-    seed String CODEC(LZ4),
-    lamports UInt64,
-    space UInt64,
-    owner LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 4e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    funding_account TEXT,
+    created_account TEXT,
+    base_account TEXT,
+    seed TEXT,
+    lamports BIGINT,
+    space BIGINT,
+    owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_advance_nonce_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    nonce_account LowCardinality(String) CODEC(LZ4),
-    nonce_authority LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    nonce_account TEXT,
+    nonce_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_withdraw_nonce_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    nonce_account LowCardinality(String) CODEC(LZ4),
-    nonce_authority LowCardinality(String) CODEC(LZ4),
-    recipient_account LowCardinality(String) CODEC(LZ4),
-    lamports UInt64,
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    nonce_account TEXT,
+    nonce_authority TEXT,
+    recipient_account TEXT,
+    lamports BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_initialize_nonce_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    nonce_account LowCardinality(String) CODEC(LZ4),
-    nonce_authority LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    nonce_account TEXT,
+    nonce_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_authorize_nonce_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    nonce_account LowCardinality(String) CODEC(LZ4),
-    nonce_authority LowCardinality(String) CODEC(LZ4),
-    new_nonce_authority LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    nonce_account TEXT,
+    nonce_authority TEXT,
+    new_nonce_authority TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_allocate_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    account LowCardinality(String) CODEC(LZ4),
-    space UInt64,
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    account TEXT,
+    space BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_allocate_with_seed_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    allocated_account LowCardinality(String) CODEC(LZ4),
-    base_account LowCardinality(String) CODEC(LZ4),
-    seed String CODEC(LZ4),
-    space UInt64,
-    owner LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    allocated_account TEXT,
+    base_account TEXT,
+    seed TEXT,
+    space BIGINT,
+    owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_assign_with_seed_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    assigned_account LowCardinality(String) CODEC(LZ4),
-    base_account LowCardinality(String) CODEC(LZ4),
-    seed String CODEC(LZ4),
-    owner LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    assigned_account TEXT,
+    base_account TEXT,
+    seed TEXT,
+    owner TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_transfer_with_seed_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    funding_account LowCardinality(String) CODEC(LZ4),
-    funding_account_pre_balance UInt64,
-    funding_account_post_balance UInt64,
-    base_account LowCardinality(String) CODEC(LZ4),
-    recipient_account LowCardinality(String) CODEC(LZ4),
-    recipient_account_pre_balance UInt64,
-    recipient_account_post_balance UInt64,
-    lamports UInt64,
-    from_seed String CODEC(LZ4),
-    from_owner LowCardinality(String) CODEC(LZ4),
-    transfer_type LowCardinality(String) DEFAULT 'unknown' CODEC(LZ4),
-    PROJECTION projection_funding_account (SELECT * ORDER BY funding_account, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_recipient_account (SELECT * ORDER BY recipient_account, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    funding_account TEXT,
+    funding_account_pre_balance BIGINT,
+    funding_account_post_balance BIGINT,
+    base_account TEXT,
+    recipient_account TEXT,
+    recipient_account_pre_balance BIGINT,
+    recipient_account_post_balance BIGINT,
+    lamports BIGINT,
+    from_seed TEXT,
+    from_owner TEXT,
+    transfer_type TEXT DEFAULT 'unknown',
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE system_program_upgrade_nonce_account_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    nonce_account LowCardinality(String) CODEC(LZ4),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    nonce_account TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 -- PUMPFUN EVENTS
 
 CREATE TABLE pumpfun_create_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    user LowCardinality(String) CODEC(LZ4),
-    name String CODEC(LZ4),
-    symbol String CODEC(LZ4),
-    uri String CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    bonding_curve LowCardinality(String) CODEC(LZ4),
-    associated_bonding_curve LowCardinality(String) CODEC(LZ4),
-    metadata LowCardinality(String) CODEC(LZ4),
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    -- PROJECTION projection_bonding_curve (SELECT * ORDER BY bonding_curve),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    user TEXT,
+    name TEXT,
+    symbol TEXT,
+    uri TEXT,
+    mint TEXT,
+    bonding_curve TEXT,
+    associated_bonding_curve TEXT,
+    metadata TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE pumpfun_initialize_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    user LowCardinality(String) CODEC(LZ4),
-    -- PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    user TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE pumpfun_set_params_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    user LowCardinality(String) CODEC(LZ4),
-    fee_recipient LowCardinality(String) CODEC(LZ4),
-    initial_virtual_token_reserves UInt64,
-    initial_virtual_sol_reserves UInt64,
-    initial_real_token_reserves UInt64,
-    token_total_supply UInt64,
-    fee_basis_points UInt64,
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    user TEXT,
+    fee_recipient TEXT,
+    initial_virtual_token_reserves BIGINT,
+    initial_virtual_sol_reserves BIGINT,
+    initial_real_token_reserves BIGINT,
+    token_total_supply BIGINT,
+    fee_basis_points BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE pumpfun_swap_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    user LowCardinality(String) CODEC(LZ4),
-    mint LowCardinality(String) CODEC(LZ4),
-    bonding_curve LowCardinality(String) CODEC(LZ4),
-    token_amount UInt64,
-    direction String CODEC(LZ4),
-    sol_amount UInt64,
-    virtual_sol_reserves UInt64,
-    virtual_token_reserves UInt64,
-    real_sol_reserves UInt64,
-    real_token_reserves UInt64,
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 8e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    user TEXT,
+    mint TEXT,
+    bonding_curve TEXT,
+    token_amount BIGINT,
+    direction TEXT,
+    sol_amount BIGINT,
+    virtual_sol_reserves BIGINT,
+    virtual_token_reserves BIGINT,
+    real_sol_reserves BIGINT,
+    real_token_reserves BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE pumpfun_withdraw_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    mint LowCardinality(String) CODEC(LZ4),
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 -- MPL TOKEN METADATA EVENTS
 
 CREATE TABLE mpl_token_metadata_create_metadata_account_v3_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    metadata String CODEC(LZ4),
-    mint String CODEC(LZ4),
-    update_authority String CODEC(LZ4),
-    is_mutable Boolean,
-    name String,
-    symbol String,
-    uri String,
-    seller_fee_basis_points UInt64,
-    PROJECTION projection_symbol (SELECT * ORDER BY symbol, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_mint (SELECT * ORDER BY mint, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    metadata TEXT,
+    mint TEXT,
+    update_authority TEXT,
+    is_mutable BOOLEAN,
+    name TEXT,
+    symbol TEXT,
+    uri TEXT,
+    seller_fee_basis_points BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
 
 CREATE TABLE mpl_token_metadata_other_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    "type" String,
-    -- PROJECTION projection_type (SELECT * ORDER BY "type"),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    "type" TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
