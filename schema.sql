@@ -76,123 +76,121 @@ CREATE INDEX idx_raydium_amm_swap_events_mint_out ON raydium_amm_swap_events (mi
 
 CREATE TABLE raydium_amm_initialize_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    amm LowCardinality(String) CODEC(LZ4),
-    user LowCardinality(String) CODEC(LZ4),
-    pc_init_amount UInt64,
-    coin_init_amount UInt64,
-    lp_init_amount UInt64,
-    pc_mint LowCardinality(String) CODEC(LZ4),
-    coin_mint LowCardinality(String) CODEC(LZ4),
-    lp_mint LowCardinality(String) CODEC(LZ4),
-    user_pc_pre_balance UInt64,
-    user_coin_pre_balance UInt64,
-    PROJECTION projection_amm (SELECT * ORDER BY amm, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_pc_mint (SELECT * ORDER BY pc_mint, slot, transaction_index, instruction_index),
-    PROJECTION projection_coin_mint (SELECT * ORDER BY coin_mint, slot, transaction_index, instruction_index),
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    amm TEXT,
+    user TEXT,
+    pc_init_amount BIGINT,
+    coin_init_amount BIGINT,
+    lp_init_amount BIGINT,
+    pc_mint TEXT,
+    coin_mint TEXT,
+    lp_mint TEXT,
+    user_pc_pre_balance BIGINT,
+    user_coin_pre_balance BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_raydium_amm_initialize_events_amm ON raydium_amm_initialize_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_initialize_events_user ON raydium_amm_initialize_events (user, slot, transaction_index, instruction_index);
 
 CREATE TABLE raydium_amm_deposit_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    amm LowCardinality(String) CODEC(LZ4),
-    user LowCardinality(String) CODEC(LZ4),
-    pc_amount UInt64,
-    coin_amount UInt64,
-    pool_pc_amount UInt64,
-    pool_coin_amount UInt64,
-    lp_amount UInt64,
-    pc_mint LowCardinality(String) CODEC(LZ4),
-    coin_mint LowCardinality(String) CODEC(LZ4),
-    lp_mint LowCardinality(String) CODEC(LZ4),
-    user_pc_pre_balance UInt64,
-    user_coin_pre_balance UInt64,
-    PROJECTION projection_amm (SELECT * ORDER BY amm, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_pc_mint (SELECT * ORDER BY pc_mint, slot, transaction_index, instruction_index),
-    PROJECTION projection_coin_mint (SELECT * ORDER BY coin_mint, slot, transaction_index, instruction_index),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    amm TEXT,
+    user TEXT,
+    pc_amount BIGINT,
+    coin_amount BIGINT,
+    pool_pc_amount BIGINT,
+    pool_coin_amount BIGINT,
+    lp_amount BIGINT,
+    pc_mint TEXT,
+    coin_mint TEXT,
+    lp_mint TEXT,
+    user_pc_pre_balance BIGINT,
+    user_coin_pre_balance BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_raydium_amm_deposit_events_amm ON raydium_amm_deposit_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_deposit_events_user ON raydium_amm_deposit_events (user, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_deposit_events_pc_mint ON raydium_amm_deposit_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_deposit_events_coin_mint ON raydium_amm_deposit_events (coin_mint, slot, transaction_index, instruction_index);
 
 CREATE TABLE raydium_amm_withdraw_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    amm LowCardinality(String) CODEC(LZ4),
-    user LowCardinality(String) CODEC(LZ4),
-    pc_amount UInt64,
-    coin_amount UInt64,
-    lp_amount UInt64,
-    pool_pc_amount UInt64,
-    pool_coin_amount UInt64,
-    pc_mint LowCardinality(String) CODEC(LZ4),
-    coin_mint LowCardinality(String) CODEC(LZ4),
-    lp_mint LowCardinality(String) CODEC(LZ4),
-    user_pc_pre_balance UInt64,
-    user_coin_pre_balance UInt64,
-    PROJECTION projection_amm (SELECT * ORDER BY amm, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_pc_mint (SELECT * ORDER BY pc_mint, slot, transaction_index, instruction_index),
-    PROJECTION projection_coin_mint (SELECT * ORDER BY coin_mint, slot, transaction_index, instruction_index),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    amm TEXT,
+    user TEXT,
+    pc_amount BIGINT,
+    coin_amount BIGINT,
+    lp_amount BIGINT,
+    pool_pc_amount BIGINT,
+    pool_coin_amount BIGINT,
+    pc_mint TEXT,
+    coin_mint TEXT,
+    lp_mint TEXT,
+    user_pc_pre_balance BIGINT,
+    user_coin_pre_balance BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_raydium_amm_withdraw_events_amm ON raydium_amm_withdraw_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_events_user ON raydium_amm_withdraw_events (user, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_events_pc_mint ON raydium_amm_withdraw_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_events_coin_mint ON raydium_amm_withdraw_events (coin_mint, slot, transaction_index, instruction_index);
 
 CREATE TABLE raydium_amm_withdraw_pnl_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    amm LowCardinality(String) CODEC(LZ4),
-    user LowCardinality(String) CODEC(LZ4),
-    pc_amount UInt64,
-    coin_amount UInt64,
-    pc_mint LowCardinality(String) CODEC(LZ4),
-    coin_mint LowCardinality(String) CODEC(LZ4),
-    PROJECTION projection_amm (SELECT * ORDER BY amm, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_pc_mint (SELECT * ORDER BY pc_mint, slot, transaction_index, instruction_index),
-    PROJECTION projection_coin_mint (SELECT * ORDER BY coin_mint, slot, transaction_index, instruction_index),
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    amm TEXT,
+    user TEXT,
+    pc_amount BIGINT,
+    coin_amount BIGINT,
+    pc_mint TEXT,
+    coin_mint TEXT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_raydium_amm_withdraw_pnl_events_amm ON raydium_amm_withdraw_pnl_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_pnl_events_user ON raydium_amm_withdraw_pnl_events (user, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_pnl_events_pc_mint ON raydium_amm_withdraw_pnl_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_withdraw_pnl_events_coin_mint ON raydium_amm_withdraw_pnl_events (coin_mint, slot, transaction_index, instruction_index);
 
 -- SPL TOKEN EVENTS
 
