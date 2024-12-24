@@ -4,75 +4,75 @@
 
 CREATE TABLE blocks
 (
-    slot UInt64,
-    parent_slot UInt64,
-    block_height UInt64,
-    blockhash String,
-    previous_blockhash String,
-    block_time DateTime,
-    insertion_time DateTime MATERIALIZED now(),
-)
-ENGINE = MergeTree
-PRIMARY KEY slot
-ORDER BY slot;
+    slot BIGINT,
+    parent_slot BIGINT,
+    block_height BIGINT,
+    blockhash TEXT,
+    previous_blockhash TEXT,
+    block_time TIMESTAMP,
+    insertion_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (slot)
+);
 
 -- TRANSACTIONS
 
 CREATE TABLE transactions
 (
-    slot UInt64,
-    transaction_index UInt64,
-    signature String,
-    number_of_signers UInt8,
-    signer0 String,
-    signer1 String DEFAULT '',
-    signer2 String DEFAULT '',
-    signer3 String DEFAULT '',
-    signer4 String DEFAULT '',
-    signer5 String DEFAULT '',
-    signer6 String DEFAULT '',
-    signer7 String DEFAULT '',
-    -- signers Array(String),
-    PROJECTION projection_signature (SELECT * ORDER BY signature) -- RECOMMENDED
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 1e6)
-PRIMARY KEY (slot, transaction_index)
-ORDER BY (slot, transaction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    signature TEXT,
+    number_of_signers SMALLINT,
+    signer0 TEXT,
+    signer1 TEXT DEFAULT '',
+    signer2 TEXT DEFAULT '',
+    signer3 TEXT DEFAULT '',
+    signer4 TEXT DEFAULT '',
+    signer5 TEXT DEFAULT '',
+    signer6 TEXT DEFAULT '',
+    signer7 TEXT DEFAULT '',
+    -- signers TEXT[], -- Array alternative if needed
+    PRIMARY KEY (slot, transaction_index)
+);
+
+-- Create index for signature lookups (replaces ClickHouse's PROJECTION)
+CREATE INDEX idx_transactions_signature ON transactions (signature);
+
+-- Create partition (optional, requires PostgreSQL 10+)
+CREATE TABLE transactions_partition_template (LIKE transactions INCLUDING ALL)
+PARTITION BY RANGE (slot);
 
 -- RAYDIUM AMM EVENTS
 
 CREATE TABLE raydium_amm_swap_events
 (
-    slot UInt64,
-    transaction_index UInt64,
-    instruction_index UInt64,
-    partial_signature String,
-    partial_blockhash String,
-    amm LowCardinality(String) CODEC(LZ4),
-    user LowCardinality(String) CODEC(LZ4),
-    amount_in UInt64,
-    amount_out UInt64,
-    mint_in LowCardinality(String) CODEC(LZ4),
-    mint_out LowCardinality(String) CODEC(LZ4),
-    direction LowCardinality(String) CODEC(LZ4),
-    pool_pc_amount UInt64,
-    pool_coin_amount UInt64,
-    user_pre_balance_in UInt64,
-    user_pre_balance_out UInt64,
-    PROJECTION projection_amm (SELECT * ORDER BY amm, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_user (SELECT * ORDER BY user, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_mint_in (SELECT * ORDER BY mint_in, slot, transaction_index, instruction_index), -- RECOMMENDED
-    PROJECTION projection_mint_out (SELECT * ORDER BY mint_out, slot, transaction_index, instruction_index), -- RECOMMENDED
-    parent_instruction_index Int64 DEFAULT -1,
-    top_instruction_index Int64 DEFAULT -1,
-    parent_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-    top_instruction_program_id LowCardinality(String) DEFAULT '' CODEC(LZ4),
-)
-ENGINE = MergeTree
-PARTITION BY toInt64(slot / 1e6)
-PRIMARY KEY (slot, transaction_index, instruction_index)
-ORDER BY (slot, transaction_index, instruction_index);
+    slot BIGINT,
+    transaction_index BIGINT,
+    instruction_index BIGINT,
+    partial_signature TEXT,
+    partial_blockhash TEXT,
+    amm TEXT,
+    user TEXT,
+    amount_in BIGINT,
+    amount_out BIGINT,
+    mint_in TEXT,
+    mint_out TEXT,
+    direction TEXT,
+    pool_pc_amount BIGINT,
+    pool_coin_amount BIGINT,
+    user_pre_balance_in BIGINT,
+    user_pre_balance_out BIGINT,
+    parent_instruction_index BIGINT DEFAULT -1,
+    top_instruction_index BIGINT DEFAULT -1,
+    parent_instruction_program_id TEXT DEFAULT '',
+    top_instruction_program_id TEXT DEFAULT '',
+    PRIMARY KEY (slot, transaction_index, instruction_index)
+);
+
+-- Create indexes to replace ClickHouse PROJECTIONS
+CREATE INDEX idx_raydium_amm_swap_events_amm ON raydium_amm_swap_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_swap_events_user ON raydium_amm_swap_events (user, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_swap_events_mint_in ON raydium_amm_swap_events (mint_in, slot, transaction_index, instruction_index);
+CREATE INDEX idx_raydium_amm_swap_events_mint_out ON raydium_amm_swap_events (mint_out, slot, transaction_index, instruction_index);
 
 CREATE TABLE raydium_amm_initialize_events
 (
