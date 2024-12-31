@@ -1,6 +1,6 @@
 specVersion: v0.1.0
 package:
-  name: 'solana_clickhouse'
+  name: 'solana_postgres'
   version: v0.1.0
 
 imports:
@@ -15,7 +15,7 @@ imports:
 binaries:
   default:
     type: wasm/rust-v1
-    file: target/wasm32-unknown-unknown/release/solana_clickhouse.wasm
+    file: target/wasm32-unknown-unknown/release/solana_postgres.wasm
 
 modules:
   - name: block_database_changes

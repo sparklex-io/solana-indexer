@@ -41,6 +41,9 @@
             clippy
             rustfmt
 
+            nodejs
+            nodePackages.npm
+
             git
           ];
 
