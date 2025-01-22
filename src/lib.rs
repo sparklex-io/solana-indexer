@@ -5,26 +5,15 @@ use substreams_database_change::tables::{Row, Tables};
 use substreams_solana::pb::sf::solana::r#type::v1::{Block, ConfirmedTransaction};
 
 use substreams_solana_utils::transaction::{get_context, get_signature, get_signers, TransactionContext};
-use substreams_solana_utils::system_program::constants::SYSTEM_PROGRAM_ID;
-use substreams_solana_utils::spl_token::constants::TOKEN_PROGRAM_ID;
 
 use raydium_amm_substream;
 use raydium_amm_substream::raydium_amm::constants::RAYDIUM_AMM_PROGRAM_ID;
+use raydium_amm_substream::raydium_clmm::constants::RAYDIUM_CLAMM_PROGRAM_ID;
 use raydium_amm_substream::pb::raydium_amm::raydium_amm_event;
-
-use spl_token_substream;
-use spl_token_substream::pb::spl_token::{spl_token_event, AuthorityType};
-
-use mpl_token_metadata_substream;
-use mpl_token_metadata_substream::mpl_token_metadata::constants::MPL_TOKEN_METADATA_PROGRAM_ID;
-use mpl_token_metadata_substream::pb::mpl_token_metadata::mpl_token_metadata_event;
 
 use pumpfun_substream;
 use pumpfun_substream::pumpfun::PUMPFUN_PROGRAM_ID;
 use pumpfun_substream::pb::pumpfun::pumpfun_event;
-
-use system_program_substream;
-use system_program_substream::pb::system_program::system_program_event;
 
 mod instruction;
 use instruction::{get_indexed_instructions, IndexedInstruction, IndexedInstructions};
@@ -96,14 +85,10 @@ fn parse_instruction<'a>(
     let program_id = instruction.program_id();
     let row = if program_id == RAYDIUM_AMM_PROGRAM_ID {
         parse_raydium_amm_instruction(instruction, context, tables, slot, transaction_index)
-    // } else if program_id == TOKEN_PROGRAM_ID {
-        // parse_spl_token_instruction(instruction, context, tables, slot, transaction_index)
-    // } else if program_id == SYSTEM_PROGRAM_ID {
-        // parse_system_program_instruction(instruction, context, tables, slot, transaction_index)
     } else if program_id == PUMPFUN_PROGRAM_ID {
         parse_pumpfun_instruction(instruction, context, tables, slot, transaction_index)
-    // } else if program_id == MPL_TOKEN_METADATA_PROGRAM_ID {
-    //     parse_mpl_token_metadata_instruction(instruction, context, tables, slot, transaction_index)
+    } else if program_id == RAYDIUM_CLAMM_PROGRAM_ID {
+        parse_raydium_clmm_instruction(instruction, context, tables, slot, transaction_index)
     } else {
         return Ok(None);
     }?;
@@ -129,236 +114,32 @@ fn parse_instruction<'a>(
     }
 }
 
-// fn parse_system_program_instruction<'a>(
-//     instruction: &IndexedInstruction,
-//     context: &TransactionContext,
-//     tables: &'a mut Tables,
-//     slot: u64,
-//     transaction_index: u32,
-// ) -> Result<Option<&'a mut Row>, Error> {
-//     let row = match system_program_substream::parse_instruction(&instruction.instruction, context)? {
-//         Some(system_program_event::Event::CreateAccount(create_account)) => {
-//             tables.create_row("system_program_create_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("funding_account", create_account.funding_account)
-//                 .set("new_account", create_account.new_account)
-//                 .set("lamports", create_account.lamports)
-//                 .set("space", create_account.space)
-//                 .set("owner", create_account.owner)
-//         },
-//         Some(system_program_event::Event::Assign(assign)) => {
-//             tables.create_row("system_program_assign_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("assigned_account", assign.assigned_account)
-//                 .set("owner", assign.owner)
-//         },
-//         Some(system_program_event::Event::Transfer(transfer)) => {
-//             tables.create_row("system_program_transfer_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("funding_account", transfer.funding_account)
-//                 .set("funding_account_pre_balance", transfer.funding_account_balance.as_ref().map(|x| x.pre_balance).unwrap_or(0))
-//                 .set("funding_account_post_balance", transfer.funding_account_balance.as_ref().map(|x| x.post_balance).unwrap_or(0))
-//                 .set("recipient_account", transfer.recipient_account)
-//                 .set("recipient_account_pre_balance", transfer.recipient_account_balance.as_ref().map(|x| x.pre_balance).unwrap_or(0))
-//                 .set("recipient_account_post_balance", transfer.recipient_account_balance.as_ref().map(|x| x.post_balance).unwrap_or(0))
-//                 .set("lamports", transfer.lamports)
-//                 .set("transfer_type", "unknown")
-//         },
-//         Some(system_program_event::Event::CreateAccountWithSeed(create_account_with_seed)) => {
-//             tables.create_row("system_program_create_account_with_seed_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("funding_account", create_account_with_seed.funding_account)
-//                 .set("created_account", create_account_with_seed.created_account)
-//                 .set("base_account", create_account_with_seed.base_account)
-//                 .set("seed", create_account_with_seed.seed)
-//                 .set("lamports", create_account_with_seed.lamports)
-//                 .set("space", create_account_with_seed.space)
-//                 .set("owner", create_account_with_seed.owner)
-//         },
-//         Some(system_program_event::Event::AdvanceNonceAccount(advance_nonce_account)) => {
-//             tables.create_row("system_program_advance_nonce_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("nonce_account", advance_nonce_account.nonce_account)
-//                 .set("nonce_authority", advance_nonce_account.nonce_authority)
-//         },
-//         Some(system_program_event::Event::WithdrawNonceAccount(withdraw_nonce_account)) => {
-//             tables.create_row("system_program_withdraw_nonce_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("nonce_account", withdraw_nonce_account.nonce_account)
-//                 .set("nonce_authority", withdraw_nonce_account.nonce_authority)
-//                 .set("recipient_account", withdraw_nonce_account.recipient_account)
-//                 .set("lamports", withdraw_nonce_account.lamports)
-//         },
-//         Some(system_program_event::Event::InitializeNonceAccount(initialize_nonce_account)) => {
-//             tables.create_row("system_program_initialize_nonce_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("nonce_account", initialize_nonce_account.nonce_account)
-//                 .set("nonce_authority", initialize_nonce_account.nonce_authority)
-//         },
-//         Some(system_program_event::Event::AuthorizeNonceAccount(authorize_nonce_account)) => {
-//             tables.create_row("system_program_authorize_nonce_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("nonce_account", authorize_nonce_account.nonce_account)
-//                 .set("nonce_authority", authorize_nonce_account.nonce_authority)
-//                 .set("new_nonce_authority", authorize_nonce_account.new_nonce_authority)
-//         },
-//         Some(system_program_event::Event::Allocate(allocate)) => {
-//             tables.create_row("system_program_allocate_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("account", allocate.account)
-//                 .set("space", allocate.space)
-//         },
-//         Some(system_program_event::Event::AllocateWithSeed(allocate_with_seed)) => {
-//             tables.create_row("system_program_allocate_with_seed_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("allocated_account", allocate_with_seed.allocated_account)
-//                 .set("base_account", allocate_with_seed.base_account)
-//                 .set("seed", allocate_with_seed.seed)
-//                 .set("space", allocate_with_seed.space)
-//                 .set("owner", allocate_with_seed.owner)
-//         },
-//         Some(system_program_event::Event::AssignWithSeed(assign_with_seed)) => {
-//             tables.create_row("system_program_assign_with_seed_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("assigned_account", assign_with_seed.assigned_account)
-//                 .set("base_account", assign_with_seed.base_account)
-//                 .set("seed", assign_with_seed.seed)
-//                 .set("owner", assign_with_seed.owner)
-//         },
-//         Some(system_program_event::Event::TransferWithSeed(transfer_with_seed)) => {
-//             tables.create_row("system_program_transfer_with_seed_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("funding_account", transfer_with_seed.funding_account)
-//                 .set("funding_account_pre_balance", transfer_with_seed.funding_account_balance.as_ref().map(|x| x.pre_balance).unwrap_or(0))
-//                 .set("funding_account_post_balance", transfer_with_seed.funding_account_balance.as_ref().map(|x| x.post_balance).unwrap_or(0))
-//                 .set("base_account", transfer_with_seed.base_account)
-//                 .set("recipient_account", transfer_with_seed.recipient_account)
-//                 .set("recipient_account_pre_balance", transfer_with_seed.recipient_account_balance.as_ref().map(|x| x.pre_balance).unwrap_or(0))
-//                 .set("recipient_account_post_balance", transfer_with_seed.recipient_account_balance.as_ref().map(|x| x.post_balance).unwrap_or(0))
-//                 .set("lamports", transfer_with_seed.lamports)
-//                 .set("from_seed", transfer_with_seed.from_seed)
-//                 .set("from_owner", transfer_with_seed.from_owner)
-//                 .set("transfer_type", "unknown")
-//         },
-//         Some(system_program_event::Event::UpgradeNonceAccount(upgrade_nonce_account)) => {
-//             tables.create_row("system_program_upgrade_nonce_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("nonce_account", upgrade_nonce_account.nonce_account)
-//         },
-//         None => return Ok(None),
-//     };
-//     Ok(Some(row))
-// }
-
-// fn parse_spl_token_instruction<'a>(
-//     instruction: &IndexedInstruction,
-//     context: &TransactionContext,
-//     tables: &'a mut Tables,
-//     slot: u64,
-//     transaction_index: u32,
-// ) -> Result<Option<&'a mut Row>, Error> {
-//     let row = match spl_token_substream::parse_instruction(&instruction.instruction, context)? {
-//         Some(spl_token_event::Event::InitializeMint(initialize_mint)) => {
-//             let row = tables.create_row("spl_token_initialize_mint_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("mint", &initialize_mint.mint)
-//                 .set("decimals", initialize_mint.decimals)
-//                 .set("mint_authority", &initialize_mint.mint_authority);
-//             match &initialize_mint.freeze_authority {
-//                 Some(freeze_authority) => { row.set("freeze_authority", freeze_authority); }
-//                 None => { row.set("freeze_authority", "null".to_string()); }
-//             }
-//             row
-//         },
-//         Some(spl_token_event::Event::InitializeAccount(initialize_account)) => {
-//             tables.create_row("spl_token_initialize_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("account_address", &initialize_account.account.as_ref().unwrap().address)
-//                 .set("account_owner", &initialize_account.account.as_ref().unwrap().owner)
-//                 .set("mint", &initialize_account.account.as_ref().unwrap().mint)
-//         },
-//         Some(spl_token_event::Event::InitializeMultisig(initialize_multisig)) => {
-//             tables.create_row("spl_token_initialize_multisig_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("multisig", &initialize_multisig.multisig)
-//                 // .set_clickhouse_array("signers", initialize_multisig.signers.clone())
-//                 .set("m", initialize_multisig.m)
-//         },
-//         Some(spl_token_event::Event::Transfer(transfer)) => {
-//             tables.create_row("spl_token_transfer_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &transfer.source.as_ref().unwrap().address)
-//                 .set("source_owner", &transfer.source.as_ref().unwrap().owner)
-//                 .set("destination_address", &transfer.destination.as_ref().unwrap().address)
-//                 .set("destination_owner", &transfer.destination.as_ref().unwrap().owner)
-//                 .set("mint", &transfer.source.as_ref().unwrap().mint)
-//                 .set("authority", &transfer.authority)
-//                 .set("amount", transfer.amount)
-//                 .set("source_pre_balance", transfer.source.as_ref().unwrap().pre_balance.unwrap_or(0))
-//                 .set("destination_pre_balance", transfer.source.as_ref().unwrap().pre_balance.unwrap_or(0))
-//                 .set("transfer_type", "unknown")
-//         },
-//         Some(spl_token_event::Event::Approve(approve)) => {
-//             tables.create_row("spl_token_approve_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &approve.source.as_ref().unwrap().address)
-//                 .set("source_owner", &approve.source.as_ref().unwrap().owner)
-//                 .set("mint", &approve.source.as_ref().unwrap().mint)
-//                 .set("delegate", &approve.delegate)
-//                 .set("amount", approve.amount)
-//         },
-//         Some(spl_token_event::Event::Revoke(revoke)) => {
-//             tables.create_row("spl_token_revoke_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &revoke.source.as_ref().unwrap().address)
-//                 .set("source_owner", &revoke.source.as_ref().unwrap().owner)
-//                 .set("mint", &revoke.source.as_ref().unwrap().mint)
-//         },
-//         Some(spl_token_event::Event::SetAuthority(set_authority)) => {
-//             let row = tables.create_row("spl_token_set_authority_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("mint", &set_authority.mint)
-//                 .set("authority_type", AuthorityType::from_i32(set_authority.authority_type).unwrap().as_str_name());
-//             match &set_authority.new_authority {
-//                 Some(new_authority) => { row.set("new_authority", new_authority); }
-//                 None => { row.set("new_authority", "null".to_string()); }
-//             }
-//             row
-//         },
-//         Some(spl_token_event::Event::MintTo(mint_to)) => {
-//             tables.create_row("spl_token_mint_to_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("destination_address", &mint_to.destination.as_ref().unwrap().address)
-//                 .set("destination_owner", &mint_to.destination.as_ref().unwrap().owner)
-//                 .set("mint", &mint_to.mint)
-//                 .set("mint_authority", &mint_to.mint_authority)
-//                 .set("amount", mint_to.amount)
-//                 .set("destination_pre_balance", mint_to.destination.unwrap().pre_balance.unwrap_or(0))
-//         },
-//         Some(spl_token_event::Event::Burn(burn)) => {
-//             tables.create_row("spl_token_burn_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &burn.source.as_ref().unwrap().address)
-//                 .set("source_owner", &burn.source.as_ref().unwrap().owner)
-//                 .set("mint", &burn.source.as_ref().unwrap().mint)
-//                 .set("amount", burn.amount)
-//                 .set("authority", &burn.authority)
-//                 .set("source_pre_balance", burn.source.unwrap().pre_balance.unwrap_or(0))
-//         },
-//         Some(spl_token_event::Event::CloseAccount(close_account)) => {
-//             tables.create_row("spl_token_close_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &close_account.source.as_ref().unwrap().address)
-//                 .set("source_owner", &close_account.source.as_ref().unwrap().owner)
-//                 .set("destination", &close_account.destination)
-//                 .set("mint", &close_account.source.as_ref().unwrap().mint)
-//         },
-//         Some(spl_token_event::Event::FreezeAccount(freeze_account)) => {
-//             tables.create_row("spl_token_freeze_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &freeze_account.source.as_ref().unwrap().address)
-//                 .set("source_owner", &freeze_account.source.as_ref().unwrap().owner)
-//                 .set("mint", &freeze_account.source.as_ref().unwrap().mint)
-//                 .set("freeze_authority", &freeze_account.freeze_authority)
-//         },
-//         Some(spl_token_event::Event::ThawAccount(thaw_account)) => {
-//             tables.create_row("spl_token_thaw_account_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("source_address", &thaw_account.source.as_ref().unwrap().address)
-//                 .set("source_owner", &thaw_account.source.as_ref().unwrap().owner)
-//                 .set("mint", &thaw_account.source.as_ref().unwrap().mint)
-//                 .set("freeze_authority", &thaw_account.freeze_authority)
-//         },
-//         Some(spl_token_event::Event::InitializeImmutableOwner(initialize_immutable_owner)) => {
-//             tables.create_row("spl_token_initialize_immutable_owner_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("account_address", &initialize_immutable_owner.account.as_ref().unwrap().address)
-//                 .set("account_owner", &initialize_immutable_owner.account.as_ref().unwrap().owner)
-//                 .set("mint", &initialize_immutable_owner.account.as_ref().unwrap().mint)
-//         },
-//         Some(spl_token_event::Event::SyncNative(sync_native)) => {
-//             tables.create_row("spl_token_sync_native_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("account_address", &sync_native.account.as_ref().unwrap().address)
-//                 .set("account_owner", &sync_native.account.as_ref().unwrap().owner)
-//         }
-//         None => return Ok(None)
-//     };
-//     Ok(Some(row))
-// }
+fn parse_raydium_clmm_instruction<'a>(
+    instruction: &IndexedInstruction,
+    context: &TransactionContext,
+    tables: &'a mut Tables,
+    slot: u64,
+    transaction_index: u32,
+) -> Result<Option<&'a mut Row>, Error> {
+    let row = match raydium_amm_substream::cl_parser::parse_cl_instruction(&instruction.instruction, context).map_err(Error::msg)? {
+        Some(raydium_amm_event::Event::ClCreatePool(create_pool)) => {
+            let sqrt_price = u128::from_le_bytes(create_pool.sqrt_price.try_into().map_err(|_| anyhow!("Failed to convert sqrt_price to u128"))?);
+            tables.create_row("raydium_clmm_create_pool_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
+                .set("amm", &create_pool.amm)
+                .set("creator", &create_pool.creator)
+                .set("token0_mint", &create_pool.token0_mint)
+                .set("token1_mint", &create_pool.token1_mint)
+                .set("token0_vault", &create_pool.token0_vault)
+                .set("token1_vault", &create_pool.token1_vault)
+                .set("token0_program", &create_pool.token0_program)
+                .set("token1_program", &create_pool.token1_program)
+                .set("sqrt_price", sqrt_price.to_string())
+                .set("open_time", create_pool.open_time)
+        }
+        _ => return Ok(None),
+    };
+    Ok(Some(row))
+}
 
 fn parse_raydium_amm_instruction<'a>(
     instruction: &IndexedInstruction,
@@ -493,257 +274,3 @@ fn parse_pumpfun_instruction<'a>(
     };
     Ok(Some(row))
 }
-
-// fn parse_mpl_token_metadata_instruction<'a>(
-//     instruction: &IndexedInstruction,
-//     context: &TransactionContext,
-//     tables: &'a mut Tables,
-//     slot: u64,
-//     transaction_index: u32,
-// ) -> Result<Option<&'a mut Row>, Error> {
-//     let row = match mpl_token_metadata_substream::parse_instruction(&instruction.instruction, context).map_err(|x| anyhow!(x))? {
-//         Some(mpl_token_metadata_event::Event::CreateMetadataAccountV3(create_metadata_account_v3)) => {
-//             let data = create_metadata_account_v3.data.unwrap();
-//             let row = tables.create_row("mpl_token_metadata_create_metadata_account_v3_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("metadata", create_metadata_account_v3.metadata)
-//                 .set("mint", create_metadata_account_v3.mint)
-//                 .set("update_authority", create_metadata_account_v3.update_authority)
-//                 .set("is_mutable", create_metadata_account_v3.is_mutable)
-//                 .set("name", data.name)
-//                 .set("symbol", data.symbol)
-//                 .set("uri", data.uri)
-//                 .set("seller_fee_basis_points", data.seller_fee_basis_points);
-//             row
-//         },
-//         Some(mpl_token_metadata_event::Event::ApproveCollectionAuthority(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "approve_collection_authority")
-//         },
-//         Some(mpl_token_metadata_event::Event::ApproveUseAuthority(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "approve_use_authority")
-//         },
-//         Some(mpl_token_metadata_event::Event::BubblegumSetCollectionSize(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "bubblegum_set_collection_size")
-//         },
-//         Some(mpl_token_metadata_event::Event::Burn(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "burn")
-//         },
-//         Some(mpl_token_metadata_event::Event::BurnEditionNft(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "burn_edition_nft")
-//         },
-//         Some(mpl_token_metadata_event::Event::BurnNft(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "burn_nft")
-//         },
-//         Some(mpl_token_metadata_event::Event::CloseEscrowAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "close_escrow_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::ConvertMasterEditionV1ToV2(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "convert_master_edition_v1_to_v2")
-//         },
-//         Some(mpl_token_metadata_event::Event::Create(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create")
-//         },
-//         Some(mpl_token_metadata_event::Event::CreateEscrowAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create_escrow_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::CreateMasterEdition(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create_master_edition")
-//         },
-//         Some(mpl_token_metadata_event::Event::CreateMasterEditionV3(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create_master_edition_v3")
-//         },
-//         Some(mpl_token_metadata_event::Event::CreateMetadataAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create_metadata_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::CreateMetadataAccountV2(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "create_metadata_account_v2")
-//         },
-//         Some(mpl_token_metadata_event::Event::Delegate(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "delegate")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedCreateMasterEdition(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_create_master_edition")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedCreateReservationList(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_create_reservation_list")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedMintNewEditionFromMasterEditionViaPrintingToken(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_mint_new_edition_from_master_edition_via_printing_token")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedMintPrintingTokens(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_mint_printing_tokens")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedMintPrintingTokensViaToken(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_mint_printing_tokens_via_token")
-//         },
-//         Some(mpl_token_metadata_event::Event::DeprecatedSetReservationList(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "deprecated_set_reservation_list")
-//         },
-//         Some(mpl_token_metadata_event::Event::FreezeDelegatedAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "freeze_delegated_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::Lock(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "lock")
-//         },
-//         Some(mpl_token_metadata_event::Event::Migrate(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "migrate")
-//         },
-//         Some(mpl_token_metadata_event::Event::MintNewEditionFromMasterEditionViaToken(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "mint_new_edition_from_master_edition_via_token")
-//         },
-//         Some(mpl_token_metadata_event::Event::MintNewEditionFromMasterEditionViaVaultProxy(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "mint_new_edition_from_master_edition_via_vault_proxy")
-//         },
-//         Some(mpl_token_metadata_event::Event::PuffMetadata(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "puff_metadata")
-//         },
-//         Some(mpl_token_metadata_event::Event::RemoveCreatorVerification(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "remove_creator_verification")
-//         },
-//         Some(mpl_token_metadata_event::Event::Revoke(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "revoke")
-//         },
-//         Some(mpl_token_metadata_event::Event::RevokeCollectionAuthority(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "revoke_collection_authority")
-//         },
-//         Some(mpl_token_metadata_event::Event::RevokeUseAuthority(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "revoke_use_authority")
-//         },
-//         Some(mpl_token_metadata_event::Event::SetAndVerifyCollection(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "set_and_verify_collection")
-//         },
-//         Some(mpl_token_metadata_event::Event::SetAndVerifySizedCollectionItem(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "set_and_verify_sized_collection_item")
-//         },
-//         Some(mpl_token_metadata_event::Event::SetTokenStandard(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "set_token_standard")
-//         },
-//         Some(mpl_token_metadata_event::Event::SignMetadata(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "sign_metadata")
-//         },
-//         Some(mpl_token_metadata_event::Event::ThawDelegatedAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "thaw_delegated_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::Transfer(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "transfer")
-//         },
-//         Some(mpl_token_metadata_event::Event::TransferOutOfEscrow(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "transfer_out_of_escrow")
-//         },
-//         Some(mpl_token_metadata_event::Event::Unlock(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "unlock")
-//         },
-//         Some(mpl_token_metadata_event::Event::Unverify(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "unverify")
-//         },
-//         Some(mpl_token_metadata_event::Event::UnverifyCollection(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "unverify_collection")
-//         },
-//         Some(mpl_token_metadata_event::Event::UnverifySizedCollectionItem(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "unverify_sized_collection_item")
-//         },
-//         Some(mpl_token_metadata_event::Event::Update(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "update")
-//         },
-//         Some(mpl_token_metadata_event::Event::UpdateMetadataAccount(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "update_metadata_account")
-//         },
-//         Some(mpl_token_metadata_event::Event::UpdateMetadataAccountV2(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "update_metadata_account_v2")
-//         },
-//         Some(mpl_token_metadata_event::Event::UpdatePrimarySaleHappenedViaToken(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "update_primary_sale_happened_via_token")
-//         },
-//         Some(mpl_token_metadata_event::Event::Utilize(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "utilize")
-//         },
-//         Some(mpl_token_metadata_event::Event::Print(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "print")
-//         },
-//         Some(mpl_token_metadata_event::Event::Verify(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "verify")
-//         },
-//         Some(mpl_token_metadata_event::Event::Mint(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "mint")
-//         },
-//         Some(mpl_token_metadata_event::Event::SetCollectionSize(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "set_collection_size")
-//         },
-//         Some(mpl_token_metadata_event::Event::Collect(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "collect")
-//         },
-//         Some(mpl_token_metadata_event::Event::Use(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "use")
-//         },
-//         Some(mpl_token_metadata_event::Event::VerifySizedCollectionItem(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "verify_sized_collection_item")
-//         },
-//         Some(mpl_token_metadata_event::Event::VerifyCollection(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "verify_collection")
-//         },
-//         Some(mpl_token_metadata_event::Event::Resize(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "resize")
-//         },
-//         Some(mpl_token_metadata_event::Event::CloseAccounts(_)) => {
-//             tables.create_row("mpl_token_metadata_other_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
-//                 .set("type", "close_accounts")
-//         }
-//         None => return Ok(None),
-//     };
-//     Ok(Some(row))
-// }
