@@ -6,8 +6,11 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 
+[patch."https://github.com/streamingfast/substreams-solana"]
+substreams-solana = { git = "https://github.com/streamingfast//substreams-solana.git", tag = "v0.13.0" }
+
 [dependencies]
-substreams = "0.5.0"
+substreams = "^0.5.0"
 substreams-solana = { git = "https://github.com/streamingfast/substreams-solana", branch = "master" }
 substreams-database-change = { git = "https://github.com/streamingfast/substreams-sink-database-changes", branch = "develop" }
 prost = "0.11"

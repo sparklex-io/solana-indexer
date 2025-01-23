@@ -366,7 +366,7 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 [[package]]
 name = "mpl-token-metadata-substream"
 version = "0.1.5"
-source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#e708db4815b91d5895fb1a232e1061a3b48e396a"
+source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#0fc0e19138dcc33f3798668e5c5cfccf4d4a904e"
 dependencies = [
  "borsh 1.5.1",
  "bs58 0.5.1",
@@ -633,7 +633,7 @@ dependencies = [
 [[package]]
 name = "pumpfun-substream"
 version = "0.1.5"
-source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#e708db4815b91d5895fb1a232e1061a3b48e396a"
+source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#0fc0e19138dcc33f3798668e5c5cfccf4d4a904e"
 dependencies = [
  "anyhow",
  "borsh 1.5.1",
@@ -659,7 +659,7 @@ dependencies = [
 [[package]]
 name = "raydium-amm-substream"
 version = "0.1.5"
-source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#e708db4815b91d5895fb1a232e1061a3b48e396a"
+source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#0fc0e19138dcc33f3798668e5c5cfccf4d4a904e"
 dependencies = [
  "anyhow",
  "arrayref",
@@ -781,7 +781,7 @@ dependencies = [
 [[package]]
 name = "spl-token-substream"
 version = "0.1.5"
-source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#e708db4815b91d5895fb1a232e1061a3b48e396a"
+source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#0fc0e19138dcc33f3798668e5c5cfccf4d4a904e"
 dependencies = [
  "anyhow",
  "bs58 0.5.1",
@@ -840,7 +840,7 @@ dependencies = [
 [[package]]
 name = "substreams-solana"
 version = "0.13.0"
-source = "git+https://github.com/streamingfast/substreams-solana?branch=master#0d3d087d90a927d17435653b3a7fc4ef6e2758a6"
+source = "git+https://github.com/streamingfast//substreams-solana.git?tag=v0.13.0#d564c4bda2f5ac74468c2cf5496eea7c166cf857"
 dependencies = [
  "anyhow",
  "num_enum",
@@ -852,7 +852,7 @@ dependencies = [
 [[package]]
 name = "substreams-solana-core"
 version = "0.13.0"
-source = "git+https://github.com/streamingfast/substreams-solana?branch=master#0d3d087d90a927d17435653b3a7fc4ef6e2758a6"
+source = "git+https://github.com/streamingfast//substreams-solana.git?tag=v0.13.0#d564c4bda2f5ac74468c2cf5496eea7c166cf857"
 dependencies = [
  "bs58 0.4.0",
  "prost",
@@ -863,7 +863,7 @@ dependencies = [
 [[package]]
 name = "substreams-solana-macro"
 version = "0.13.0"
-source = "git+https://github.com/streamingfast/substreams-solana?branch=master#0d3d087d90a927d17435653b3a7fc4ef6e2758a6"
+source = "git+https://github.com/streamingfast//substreams-solana.git?tag=v0.13.0#d564c4bda2f5ac74468c2cf5496eea7c166cf857"
 dependencies = [
  "bs58 0.4.0",
 ]
@@ -919,7 +919,7 @@ dependencies = [
 [[package]]
 name = "system-program-substream"
 version = "0.1.5"
-source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#e708db4815b91d5895fb1a232e1061a3b48e396a"
+source = "git+https://github.com/sparklex-io/solana-substreams?branch=kirin#0fc0e19138dcc33f3798668e5c5cfccf4d4a904e"
 dependencies = [
  "anyhow",
  "borsh 1.5.1",
