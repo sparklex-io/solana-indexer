@@ -1,5 +1,7 @@
+BEGIN;
+
 -- BLOCKS
-CREATE TABLE blocks
+CREATE TABLE IF NOT EXISTS blocks
 (
     slot NUMERIC(78,0),
     parent_slot NUMERIC(78,0),
@@ -12,7 +14,7 @@ CREATE TABLE blocks
 );
 
 -- TRANSACTIONS
-CREATE TABLE transactions
+CREATE TABLE IF NOT EXISTS transactions
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -31,14 +33,14 @@ CREATE TABLE transactions
 );
 
 -- Create index for signature lookups (replaces ClickHouse's PROJECTION)
-CREATE INDEX idx_transactions_signature ON transactions (signature);
+CREATE INDEX IF NOT EXISTS idx_transactions_signature ON transactions (signature);
 
 -- Create partition (optional, requires PostgreSQL 10+)
-CREATE TABLE transactions_partition_template (LIKE transactions INCLUDING ALL)
+CREATE TABLE IF NOT EXISTS transactions_partition_template (LIKE transactions INCLUDING ALL)
 PARTITION BY RANGE (slot);
 
 -- RAYDIUM AMM EVENTS
-CREATE TABLE raydium_amm_swap_events
+CREATE TABLE IF NOT EXISTS raydium_amm_swap_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -64,12 +66,12 @@ CREATE TABLE raydium_amm_swap_events
 );
 
 -- Create indexes to replace ClickHouse PROJECTIONS
-CREATE INDEX idx_raydium_amm_swap_events_amm ON raydium_amm_swap_events (amm, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_swap_events_user ON raydium_amm_swap_events ("user", slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_swap_events_mint_in ON raydium_amm_swap_events (mint_in, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_swap_events_mint_out ON raydium_amm_swap_events (mint_out, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_swap_events_amm ON raydium_amm_swap_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_swap_events_user ON raydium_amm_swap_events ("user", slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_swap_events_mint_in ON raydium_amm_swap_events (mint_in, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_swap_events_mint_out ON raydium_amm_swap_events (mint_out, slot, transaction_index, instruction_index);
 
-CREATE TABLE raydium_amm_initialize_events
+CREATE TABLE IF NOT EXISTS raydium_amm_initialize_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -94,10 +96,10 @@ CREATE TABLE raydium_amm_initialize_events
 );
 
 -- Create indexes to replace ClickHouse PROJECTIONS
-CREATE INDEX idx_raydium_amm_initialize_events_amm ON raydium_amm_initialize_events (amm, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_initialize_events_user ON raydium_amm_initialize_events ("user", slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_initialize_events_amm ON raydium_amm_initialize_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_initialize_events_user ON raydium_amm_initialize_events ("user", slot, transaction_index, instruction_index);
 
-CREATE TABLE raydium_amm_deposit_events
+CREATE TABLE IF NOT EXISTS raydium_amm_deposit_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -124,12 +126,12 @@ CREATE TABLE raydium_amm_deposit_events
 );
 
 -- Create indexes to replace ClickHouse PROJECTIONS
-CREATE INDEX idx_raydium_amm_deposit_events_amm ON raydium_amm_deposit_events (amm, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_deposit_events_user ON raydium_amm_deposit_events ("user", slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_deposit_events_pc_mint ON raydium_amm_deposit_events (pc_mint, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_deposit_events_coin_mint ON raydium_amm_deposit_events (coin_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_deposit_events_amm ON raydium_amm_deposit_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_deposit_events_user ON raydium_amm_deposit_events ("user", slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_deposit_events_pc_mint ON raydium_amm_deposit_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_deposit_events_coin_mint ON raydium_amm_deposit_events (coin_mint, slot, transaction_index, instruction_index);
 
-CREATE TABLE raydium_amm_withdraw_events
+CREATE TABLE IF NOT EXISTS raydium_amm_withdraw_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -156,12 +158,12 @@ CREATE TABLE raydium_amm_withdraw_events
 );
 
 -- Create indexes to replace ClickHouse PROJECTIONS
-CREATE INDEX idx_raydium_amm_withdraw_events_amm ON raydium_amm_withdraw_events (amm, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_events_user ON raydium_amm_withdraw_events ("user", slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_events_pc_mint ON raydium_amm_withdraw_events (pc_mint, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_events_coin_mint ON raydium_amm_withdraw_events (coin_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_events_amm ON raydium_amm_withdraw_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_events_user ON raydium_amm_withdraw_events ("user", slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_events_pc_mint ON raydium_amm_withdraw_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_events_coin_mint ON raydium_amm_withdraw_events (coin_mint, slot, transaction_index, instruction_index);
 
-CREATE TABLE raydium_amm_withdraw_pnl_events
+CREATE TABLE IF NOT EXISTS raydium_amm_withdraw_pnl_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -182,13 +184,13 @@ CREATE TABLE raydium_amm_withdraw_pnl_events
 );
 
 -- Create indexes to replace ClickHouse PROJECTIONS
-CREATE INDEX idx_raydium_amm_withdraw_pnl_events_amm ON raydium_amm_withdraw_pnl_events (amm, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_pnl_events_user ON raydium_amm_withdraw_pnl_events ("user", slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_pnl_events_pc_mint ON raydium_amm_withdraw_pnl_events (pc_mint, slot, transaction_index, instruction_index);
-CREATE INDEX idx_raydium_amm_withdraw_pnl_events_coin_mint ON raydium_amm_withdraw_pnl_events (coin_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_pnl_events_amm ON raydium_amm_withdraw_pnl_events (amm, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_pnl_events_user ON raydium_amm_withdraw_pnl_events ("user", slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_pnl_events_pc_mint ON raydium_amm_withdraw_pnl_events (pc_mint, slot, transaction_index, instruction_index);
+CREATE INDEX IF NOT EXISTS idx_raydium_amm_withdraw_pnl_events_coin_mint ON raydium_amm_withdraw_pnl_events (coin_mint, slot, transaction_index, instruction_index);
 
 -- PUMPFUN
-CREATE TABLE pumpfun_create_events
+CREATE TABLE IF NOT EXISTS pumpfun_create_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -210,7 +212,7 @@ CREATE TABLE pumpfun_create_events
     PRIMARY KEY (slot, transaction_index, instruction_index)
 );
 
-CREATE TABLE pumpfun_initialize_events
+CREATE TABLE IF NOT EXISTS pumpfun_initialize_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -225,7 +227,7 @@ CREATE TABLE pumpfun_initialize_events
     PRIMARY KEY (slot, transaction_index, instruction_index)
 );
 
-CREATE TABLE pumpfun_set_params_events
+CREATE TABLE IF NOT EXISTS pumpfun_set_params_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -246,7 +248,7 @@ CREATE TABLE pumpfun_set_params_events
     PRIMARY KEY (slot, transaction_index, instruction_index)
 );
 
-CREATE TABLE pumpfun_swap_events
+CREATE TABLE IF NOT EXISTS pumpfun_swap_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -270,7 +272,7 @@ CREATE TABLE pumpfun_swap_events
     PRIMARY KEY (slot, transaction_index, instruction_index)
 );
 
-CREATE TABLE pumpfun_withdraw_events
+CREATE TABLE IF NOT EXISTS pumpfun_withdraw_events
 (
     slot NUMERIC(78,0),
     transaction_index NUMERIC(78,0),
@@ -284,3 +286,5 @@ CREATE TABLE pumpfun_withdraw_events
     top_instruction_program_id TEXT DEFAULT '',
     PRIMARY KEY (slot, transaction_index, instruction_index)
 );
+
+COMMIT;

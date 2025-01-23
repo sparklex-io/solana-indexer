@@ -20,6 +20,7 @@
         
         # Select the rust toolchain you want
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+          extensions = [ "rustfmt" "rust-src" ];
           targets = [ "wasm32-unknown-unknown" ];
         };
       in

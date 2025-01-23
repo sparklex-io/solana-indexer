@@ -93,8 +93,9 @@ fn parse_instruction<'a>(
         return Ok(None);
     }?;
 
-    if let Some(row) = row {
-        if let Some(parent_instruction) = instruction.parent_instruction() {
+    if let Some((row, skip_custom_fields)) = row {
+        if !skip_custom_fields {
+            if let Some(parent_instruction) = instruction.parent_instruction() {
             let top_instruction = instruction.top_instruction().unwrap();
             row
                 .set("parent_instruction_program_id", parent_instruction.program_id().to_string())
@@ -102,11 +103,12 @@ fn parse_instruction<'a>(
                 .set("top_instruction_program_id", top_instruction.program_id().to_string())
                 .set("top_instruction_index", top_instruction.index);
         } else {
-            row
-                .set("parent_instruction_program_id", "")
-                .set("parent_instruction_index", -1)
-                .set("top_instruction_program_id", "")
-                .set("top_instruction_index", -1);
+                row
+                    .set("parent_instruction_program_id", "")
+                    .set("parent_instruction_index", -1)
+                    .set("top_instruction_program_id", "")
+                    .set("top_instruction_index", -1);
+            }
         }
         Ok(Some(row))
     } else {
@@ -120,7 +122,7 @@ fn parse_raydium_clmm_instruction<'a>(
     tables: &'a mut Tables,
     slot: u64,
     transaction_index: u32,
-) -> Result<Option<&'a mut Row>, Error> {
+) -> Result<Option<(&'a mut Row, bool)>, Error> {
     let row = match raydium_amm_substream::cl_parser::parse_cl_instruction(&instruction.instruction, context).map_err(Error::msg)? {
         Some(raydium_amm_event::Event::ClCreatePool(create_pool)) => {
             let sqrt_price = u128::from_le_bytes(create_pool.sqrt_price.try_into().map_err(|_| anyhow!("Failed to convert sqrt_price to u128"))?);
@@ -138,7 +140,7 @@ fn parse_raydium_clmm_instruction<'a>(
         }
         _ => return Ok(None),
     };
-    Ok(Some(row))
+    Ok(Some((row, false)))
 }
 
 fn parse_raydium_amm_instruction<'a>(
@@ -147,7 +149,7 @@ fn parse_raydium_amm_instruction<'a>(
     tables: &'a mut Tables,
     slot: u64,
     transaction_index: u32,
-) -> Result<Option<&'a mut Row>, Error> {
+) -> Result<Option<(&'a mut Row, bool)>, Error> {
     let row = match raydium_amm_substream::parse_instruction(&instruction.instruction, context).map_err(|x| anyhow!(x))? {
         Some(raydium_amm_event::Event::Swap(swap)) => {
             tables.create_row("raydium_amm_swap_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
@@ -217,7 +219,7 @@ fn parse_raydium_amm_instruction<'a>(
         }
         _ => return Ok(None),
     };
-    Ok(Some(row))
+    Ok(Some((row, false)))
 }
 
 fn parse_pumpfun_instruction<'a>(
@@ -226,7 +228,7 @@ fn parse_pumpfun_instruction<'a>(
     tables: &'a mut Tables,
     slot: u64,
     transaction_index: u32,
-) -> Result<Option<&'a mut Row>, Error> {
+) -> Result<Option<(&'a mut Row, bool)>, Error> {
     let row = match pumpfun_substream::parse_instruction(&instruction.instruction, context)? {
         Some(pumpfun_event::Event::Create(create)) => {
             tables.create_row("pumpfun_create_events", [("slot", slot.to_string()), ("transaction_index", transaction_index.to_string()), ("instruction_index", instruction.index.to_string())])
@@ -272,5 +274,5 @@ fn parse_pumpfun_instruction<'a>(
         },
         None => return Ok(None)
     };
-    Ok(Some(row))
+    Ok(Some((row, false)))
 }
